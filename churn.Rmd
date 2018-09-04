@@ -1,5 +1,5 @@
 ---
-title: "Churn"
+title: "Case: Churn"
 output:
   html_document:
     dev: "svg"
@@ -144,6 +144,8 @@ ggplot(data, aes(x = InternetService, y = ..prop.., group = Churn, fill = Churn)
   geom_bar(position = "dodge") + scale_fill_manual(values = c("blue4", "firebrick1"))
 ```
 
+## Save data and print session info
 ```{r}
+save(data, fit, test, file="data.RData")
 sessionInfo()
 ```
