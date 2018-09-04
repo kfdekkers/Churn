@@ -1,7 +1,10 @@
 ---
-title: 'Churn'
+title: "Churn"
 output:
-  pdf_document: default
+  html_document:
+    dev: "svg"
+  pdf_document:
+    dev: "pdf"
   html_notebook: default
 classoption: landscape
 ---
@@ -62,7 +65,7 @@ with(data, table(InternetService, OnlineSecurity))
 with(data, table(PhoneService, MultipleLines))
 ggplot(data, aes(x = Contract, y = tenure)) + geom_boxplot(color = "blue4")
 ggplot(data, aes(x = Contract, y = ..prop.., group = PaperlessBilling, fill = PaperlessBilling)) + 
-  geom_bar(position = "dodge") + scale_fill_manual(values = c("firebrick1", "blue4"))
+  geom_bar(position = "dodge") + scale_fill_manual(values = c("blue4", "firebrick1"))
 ```
 
 # Analysis plan
@@ -133,12 +136,12 @@ varImp(fit)
 
 ## Data visualization
 ```{r}
-rpart.plot(fit$finalModel, type = 5, cex = 1, box.palette = "RdBu")
+rpart.plot(fit$finalModel, type = 5, cex = 1, box.palette = "BuRd")
 ggplot(data, aes(x = PaymentMethod, y = ..prop.., group = Churn, fill = Churn)) + 
-  geom_bar(position = "dodge") + scale_fill_manual(values = c("firebrick1", "blue4"))
+  geom_bar(position = "dodge") + scale_fill_manual(values = c("blue4", "firebrick1"))
 ggplot(data, aes(x = Churn, y = tenure)) + geom_boxplot(color = "blue4")
 ggplot(data, aes(x = InternetService, y = ..prop.., group = Churn, fill = Churn)) + 
-  geom_bar(position = "dodge") + scale_fill_manual(values = c("firebrick1", "blue4"))
+  geom_bar(position = "dodge") + scale_fill_manual(values = c("blue4", "firebrick1"))
 ```
 
 ```{r}
