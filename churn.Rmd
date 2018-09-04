@@ -1,0 +1,146 @@
+---
+title: 'Churn'
+output:
+  pdf_document: default
+  html_notebook: default
+classoption: landscape
+---
+
+# Assignment
+Predict behavior to retain customers. You can analyze all relevant customer data and develop focused customer retention programs.
+
+# Preparation
+* Set random seed
+* Load libraries
+* Set working directory
+* Load data
+```{r, message=F, warning=F}
+set.seed(123)
+
+library(ggplot2)
+library(caret)
+library(gbm)
+library(rpart)
+library(rpart.plot)
+
+setwd("C:/Users/kfdek/Dropbox/Documents/R/Churn")
+
+data <- read.csv("WA_Fn-UseC_-Telco-Customer-Churn.csv")
+```
+
+## Data exploration
+```{r}
+str(data)
+summary(data)
+prop.table(table(data$Churn))
+```
+
+## Data clean-up
+* Remove customerID
+* Convert SeniorCitizen to factor variable
+```{r}
+data <- data[, !colnames(data) == "customerID"]
+data$SeniorCitizen <- factor(data$SeniorCitizen)
+```
+
+## Missing data
+* Usual options: Impute or remove
+* Alternative: Remove feature TotalCharges which has all the missing data, because it is tenure * MonthlyCharges
+```{r}
+round(cor(data$tenure * data$MonthlyCharges, data$TotalCharges, 
+          use = "pairwise.complete.obs"), 3)
+ggplot(data, aes(x = TotalCharges,  y = tenure * MonthlyCharges)) + 
+  geom_point(color = "blue4")
+data <- data[, !colnames(data) == "TotalCharges"]
+```
+
+## Sanity Checks
+* Calculate some tables of features with expected overlap
+* Plot some expected relationships
+```{r}
+with(data, table(InternetService, OnlineSecurity))
+with(data, table(PhoneService, MultipleLines))
+ggplot(data, aes(x = Contract, y = tenure)) + geom_boxplot(color = "blue4")
+ggplot(data, aes(x = Contract, y = ..prop.., group = PaperlessBilling, fill = PaperlessBilling)) + 
+  geom_bar(position = "dodge") + scale_fill_manual(values = c("firebrick1", "blue4"))
+```
+
+# Analysis plan
+## Preprocessing
+* Scale data (mean = 0, sd = 1) to ensure features with high range of values do not dominate
+
+## Model parameters
+* Use decision tree model
+    + Has integrated feature selection
+    + Tree provides insight in how selected features determine churn rate
+* Use classification accuracy instead of ROC/AUC as training metric
+    + Labels of Churn are fairly balanced
+    + No preference for rate of true positives and false positives
+* Use 10 fold cross-validation
+
+## Evaluation
+* Compare test set accuracy and feature importance with logistic regression baseline model and strong gradient boosting model
+
+# Run models
+## Split data in train and test sets using balanced split
+```{r}
+split <- createDataPartition(data$Churn, p = 0.3, list = F)
+train <- data[-split, ]
+test <- data[split, ]
+```
+
+## Baseline logistic regression model
+```{r}
+fit <- train(Churn ~ ., data = train, method = "glm", preProcess = c("center", "scale"), 
+             trControl = trainControl(method = "cv"))
+paste("Accuracy:", round(sum(test$Churn == predict(fit, test)) / nrow(test), 3))
+varImp(fit)
+```
+
+## Baseline logistic regression model 2
+* Remove correlated features to fix rank-deficiency warning
+```{r}
+fit <- train(Churn ~ ., data = train, method = "glm", preProcess = c("center", "scale", "corr"), 
+             trControl = trainControl(method = "cv"))
+paste("Accuracy:", round(sum(test$Churn == predict(fit, test)) / nrow(test), 3))
+varImp(fit)
+```
+
+## Strong gradient boosting model
+```{r}
+fit <- train(Churn ~ ., data = train, method = "gbm", preProcess = c("center", "scale"), 
+             trControl = trainControl(method = "cv"), verbose = F)
+paste("Accuracy:", round(sum(test$Churn == predict(fit, test)) / nrow(test), 3))
+varImp(fit)
+```
+
+## Decision tree model
+```{r}
+fit <- train(Churn ~ ., data = train, method = "rpart", preProcess = c("center", "scale"), 
+             trControl = trainControl(method = "cv"))
+paste("Accuracy:", round(sum(test$Churn == predict(fit, test)) / nrow(test), 3))
+varImp(fit)
+```
+
+## Decision tree model 2
+* Remove scaling to get non-scaled rules
+    + For models where scaling is important an alternative is to scale back to original mean and sd instead of removing preprocessing
+```{r}
+fit <- train(Churn ~ ., data = train, method = "rpart", trControl = trainControl(method = "cv"))
+paste("Accuracy:", round(sum(test$Churn == predict(fit, test)) / nrow(test), 3))
+varImp(fit)
+```
+
+## Data visualization
+```{r}
+rpart.plot(fit$finalModel, type = 5, cex = 1, box.palette = "RdBu")
+ggplot(data, aes(x = PaymentMethod, y = ..prop.., group = Churn, fill = Churn)) + 
+  geom_bar(position = "dodge") + scale_fill_manual(values = c("firebrick1", "blue4"))
+ggplot(data, aes(x = Churn, y = tenure)) + geom_boxplot(color = "blue4")
+ggplot(data, aes(x = InternetService, y = ..prop.., group = Churn, fill = Churn)) + 
+  geom_bar(position = "dodge") + scale_fill_manual(values = c("firebrick1", "blue4"))
+```
+
+```{r}
+sessionInfo()
+```
