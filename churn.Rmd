@@ -9,7 +9,7 @@ output:
 classoption: landscape
 ---
 
-# Assignment
+# Objective
 Predict behavior to retain customers. You can analyze all relevant customer data and develop focused customer retention programs.
 
 # Preparation
@@ -47,7 +47,7 @@ data$SeniorCitizen <- factor(data$SeniorCitizen)
 ```
 
 ## Missing data
-* Usual options: Impute or remove
+* Usual options: Impute missing values, remove rows with missing values, use model that can handle missing values
 * Alternative: Remove feature TotalCharges which has all the missing data, because it is tenure * MonthlyCharges
 ```{r}
 round(cor(data$tenure * data$MonthlyCharges, data$TotalCharges, 
@@ -64,8 +64,6 @@ data <- data[, !colnames(data) == "TotalCharges"]
 with(data, table(InternetService, OnlineSecurity))
 with(data, table(PhoneService, MultipleLines))
 ggplot(data, aes(x = Contract, y = tenure)) + geom_boxplot(color = "blue4")
-ggplot(data, aes(x = Contract, y = ..prop.., group = PaperlessBilling, fill = PaperlessBilling)) + 
-  geom_bar(position = "dodge") + scale_fill_manual(values = c("blue4", "firebrick1"))
 ```
 
 # Analysis plan
@@ -75,7 +73,7 @@ ggplot(data, aes(x = Contract, y = ..prop.., group = PaperlessBilling, fill = Pa
 ## Model parameters
 * Use decision tree model
     + Has integrated feature selection
-    + Tree provides insight in how selected features determine churn rate
+    + Tree provides insights in how selected features determine churn rate
 * Use classification accuracy instead of ROC/AUC as training metric
     + Labels of Churn are fairly balanced
     + No preference for rate of true positives and false positives
@@ -127,7 +125,7 @@ varImp(fit)
 
 ## Decision tree model 2
 * Remove scaling to get non-scaled rules
-    + For models where scaling is important an alternative is to scale back to original mean and sd instead of removing preprocessing
+    + For models where scaling is important an alternative is to scale predictions back to original mean and sd instead of removing preprocessing
 ```{r}
 fit <- train(Churn ~ ., data = train, method = "rpart", trControl = trainControl(method = "cv"))
 paste("Accuracy:", round(sum(test$Churn == predict(fit, test)) / nrow(test), 3))
@@ -135,17 +133,41 @@ varImp(fit)
 ```
 
 ## Data visualization
+* Plot tree
+* Plot relationships between Churn and features
 ```{r}
 rpart.plot(fit$finalModel, type = 5, cex = 1, box.palette = "BuRd")
+
 ggplot(data, aes(x = PaymentMethod, y = ..prop.., group = Churn, fill = Churn)) + 
   geom_bar(position = "dodge") + scale_fill_manual(values = c("blue4", "firebrick1"))
+
 ggplot(data, aes(x = Churn, y = tenure)) + geom_boxplot(color = "blue4")
+
 ggplot(data, aes(x = InternetService, y = ..prop.., group = Churn, fill = Churn)) + 
   geom_bar(position = "dodge") + scale_fill_manual(values = c("blue4", "firebrick1"))
 ```
 
-## Save data and print session info
+## Save data
 ```{r}
-save(data, fit, test, file="data.RData")
+save(data, fit, test, file = "data.RData")
+```
+
+## Customer retention strategies
+* Target customers that pay with electronic checks
+* Target customers that have a tenure < 27 that pay with electronic checks
+* Target customers that have fiber optic internet service, a tenure < 27 and pay with electronic checks
+
+## Future improvements
+* Ask data generators/curators if SeniorCitizen label 1 corresponds to customer being a senior citizen
+* Ask data generators/curators why TotalCharges differs a little bit from tenure * MonthlyCharges
+* Improve decision tree
+    + evaluate bootstrapping instead of cross-validation
+    + evaluate parameters for splitting
+    + evaluate parameters for pruning
+* Improve visualizations and app
+* Secondary objective: Improve prediction of customers that might churn at the cost of minor increase in false positives (and decreased accuracy) using ROC/AUC
+
+## Print session info
+```{r}
 sessionInfo()
 ```

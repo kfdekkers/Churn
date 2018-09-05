@@ -3,10 +3,10 @@ library(rpart.plot)
 load("data.RData")
 
 navbarPage("Churn",
-           tabPanel("Model",
+           tabPanel("Tree",
                     plotOutput("plot1")
            ),
-           tabPanel("Visualizations",
+           tabPanel("Churn vs features",
                     sidebarLayout(
                       sidebarPanel(
                         radioButtons("feature", "Feature",

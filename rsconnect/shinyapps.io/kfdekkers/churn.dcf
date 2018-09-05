@@ -5,6 +5,6 @@ account: kfdekkers
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 419675
-bundleId: 1569702
+bundleId: 1570330
 url: https://kfdekkers.shinyapps.io/churn/
-when: 1536102108.33193
+when: 1536138940.74521
